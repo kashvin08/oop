@@ -1,0 +1,109 @@
+class ShootingBot : public GenericRobot {
+public:
+    ShootingBot(const std::string& name, int x, int y, Battlefield* bf)
+        : GenericRobot(name, x, y, bf) {}
+
+    virtual void fire(int dx, int dy) override = 0;
+    virtual void takeTurn() override {
+        think();
+        look(rand() % 3 - 1, rand() % 3 - 1);
+        if (isAlive()) {
+            fire(rand() % 3 - 1, rand() % 3 - 1);
+        }
+        move(rand() % 3 - 1, rand() % 3 - 1);
+    }
+};
+
+class TrueDamageBot : public ShootingBot {
+public:
+    TrueDamageBot(const std::string& name, int x, int y, Battlefield* bf)
+        : ShootingBot(name, x, y, bf) {
+        this->type = "TrueDamageBot";
+    }
+
+    void fire(int dx, int dy) override {
+        if ((dx == 0 && dy == 0) || shells <= 0) return;
+        shells--;
+
+        int targetX = getX() + dx;
+        int targetY = getY() + dy;
+
+        if (!battlefield->isValidPosition(targetX, targetY)) {
+            std::cout << name << " tried to fire outside the battlefield.\n";
+            return;
+        }
+
+        std::cout << name << " fires at (" << targetX << ", " << targetY << ")\n";
+
+        for (Robot* other : battlefield->getRobots()) {
+            if (other != this && other->isAlive() && other->getX() == targetX && other->getY() == targetY) {
+                std::cout << name << " hits " << other->getName() << "!\n";
+
+                if (rand() % 2 == 0) {
+                    std::cout << name << " deals true damage (2 lives)!\n";
+                    other->takeDamage();
+                }
+
+                other->takeDamage();
+
+                if (!other->isAlive()) {
+                    std::cout << other->getName() << " has been destroyed!\n";
+                }
+
+                break;
+            }
+        }
+
+        if (shells == 0) {
+            std::cout << name << " is out of shells and self-destructs!\n";
+            kill();
+        }
+    }
+};
+
+class LifestealBot : public ShootingBot {
+public:
+    LifestealBot(const std::string& name, int x, int y, Battlefield* bf)
+        : ShootingBot(name, x, y, bf) {
+        this->type = "LifestealBot";
+    }
+
+    void fire(int dx, int dy) override {
+        if ((dx == 0 && dy == 0) || shells <= 0) return;
+        shells--;
+
+        int targetX = getX() + dx;
+        int targetY = getY() + dy;
+
+        if (!battlefield->isValidPosition(targetX, targetY)) {
+            std::cout << name << " tried to fire outside the battlefield.\n";
+            return;
+        }
+
+        std::cout << name << " fires at (" << targetX << ", " << targetY << ")\n";
+
+        for (Robot* other : battlefield->getRobots()) {
+            if (other != this && other->isAlive() && other->getX() == targetX && other->getY() == targetY) {
+                std::cout << name << " hits " << other->getName() << "!\n";
+
+                other->takeDamage();
+
+                if (!other->isAlive()) {
+                    std::cout << other->getName() << " has been destroyed!\n";
+
+                    if (rand() % 2 == 0) {
+                        std::cout << name << " absorbs energy and gains 1 life!\n";
+                        lives++;
+                    }
+                }
+
+                break;
+            }
+        }
+
+        if (shells == 0) {
+            std::cout << name << " is out of shells and self-destructs!\n";
+            kill();
+        }
+    }
+};
