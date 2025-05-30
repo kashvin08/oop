@@ -4,8 +4,7 @@ private:
     bool hidden = false;
 
 public:
-    HideBot(string id, int x, int y, Battlefield* bf)
-        : GenericRobot(id, x, y, bf) {
+    HideBot(string id, int x, int y, Battlefield* bf) : GenericRobot(id, x, y, bf) {
         setRobotType("HideBot");
         setRobotName(id + "_HideBot");
     }
@@ -34,8 +33,7 @@ private:
     int remainingJumps = 3;
 
 public:
-    JumpBot(string id, int x, int y, Battlefield* bf)
-        : GenericRobot(id, x, y, bf) {
+    JumpBot(string id, int x, int y, Battlefield* bf) : GenericRobot(id, x, y, bf) {
         setRobotType("JumpBot");
         setRobotName(id + "_JumpBot");
     }
@@ -80,8 +78,7 @@ private:
     int moveDistance = 3;
 
 public:
-    JuggernautBot(string id, int x, int y, Battlefield* bf)
-        : GenericRobot(id, x, y, bf) {
+    JuggernautBot(string id, int x, int y, Battlefield* bf) : GenericRobot(id, x, y, bf) {
         setRobotType("JuggernautBot");
         setRobotName(id + "_JuggernautBot");
     }
