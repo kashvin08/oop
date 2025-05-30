@@ -1,106 +1,71 @@
-class MovingRobot : public GenericRobot {
-public:
-    MovingRobot(string id, int x, int y) : GenericRobot(id, x, y) {}
-
-    virtual void move(int dx, int dy) {
-        setLocation(x() + dx, y() + dy);
-    }
-
-    virtual void actionMove(Battlefield* battlefield) = 0;
-    virtual ~MovingRobot() = default;
-};
-
-class HideBot : public MovingRobot {
+class HideBot : public GenericRobot {                //override takeDamage()
 private:
     int remainingHides = 3;
     bool hidden = false;
 
 public:
-    HideBot(string id, int x, int y) : MovingRobot(id, x, y) {
-        setRobotType("HideBot");
-        setRobotName(id + "_HideBot");
+    HideBot(string id, int x, int y, Battlefield* bf) : GenericRobot(id, x, y, bf) {}
+    
+    bool canHide() const {
+        return remainingHides > 0 ;
     }
 
-    void hide() {
-        if (remainingHides > 0) {
-            hidden = true;
+    void takeDamage() override {
+        if(canHide()) {
             remainingHides--;
-            cout << robotName() << " is hiding (invulnerable). Hides left: " << remainingHides << endl;
-        } else {
-            cout << robotName() << " tried to hide but has no hides left!" << endl;
+            battlefield->getLogger->log(name + " is hiding and avoid the hit (invulnerable). Hides left: " + std::to_string(remainingHides) + "\n") ;
+            return ;
+        } 
+        else {
+            lives-- ;
+            battlefield->getLogger->log(name + " tried to hide but has no hides left! TAKING DAMAGE!\n") ;
         }
-    }
-
-    bool isHidden() const {
-        return hidden;
-    }
-
-    void reveal() {
-        hidden = false;
-    }
-
-    void actionMove(Battlefield* battlefield) override {
-        int dx = rand() % 3 - 1;
-        int dy = rand() % 3 - 1;
-        move(dx, dy);
-        cout << robotName() << " moves to (" << x() << ", " << y() << ")" << endl;
-    }
-
-    void actions(Battlefield* battlefield) override {
-        actionThink(battlefield);
-        actionLook(battlefield);
-        if (!isHidden()) actionFire(battlefield);
-        actionMove(battlefield);
-        hide();
-        reveal();
-    }
-
-    void move(int dx, int dy) override {
-        setLocation(x() + dx, y() + dy);
     }
 };
 
-class JumpBot : public MovingRobot {
+class JumpBot : public GenericRobot {       //override move()
 private:
     int remainingJumps = 3;
 
 public:
-    JumpBot(string id, int x, int y) : MovingRobot(id, x, y) {
-        setRobotType("JumpBot");
-        setRobotName(id + "_JumpBot");
-    }
+    JumpBot(string id, int x, int y, Battlefield* bf) : GenericRobot(id, x, y, bf) {}
 
-    void jump(Battlefield* battlefield) {
-        if (remainingJumps <= 0) {
-            cout << robotName() << " tried to jump but has no jumps left!" << endl;
-            return;
+    void move(int dx, int dy) override {                 //changed from jump() to just overriding move()
+        if(canJump()) {
+            int newX = rand() % battlefield->getCols();       //random position inside the boundaries
+            int newY = rand() % battlefield->getRows();
+    
+            if(battlefield->isInside(newX, newY) && !battlefield->isOccuppied(newX, newY)) {
+                setLocation(newX, newY);
+                remainingJumps--;
+                battlefield->getLogger()->log(name + " jumped to (" + std::to_string(newX) + ", " 
+                                          + std::to_string(newY) + "). Jumps left: " + std::to_string(remainingJumps) + "\n") ;
+            }
+            else {
+                battlefield->getLogger()->log(name + " tried to jump to (" + std::to_string(newX) + "," + std::to_string(newY) 
+                                          + "). Invalid Position. No Jumps consume.\n") ;
+            }
         }
-
-        int newX = rand() % battlefield->BATTLEFIELD_NUM_OF_COLS();
-        int newY = rand() % battlefield->BATTLEFIELD_NUM_OF_ROWS();
-        setLocation(newX, newY);
-        remainingJumps--;
-
-        cout << robotName() << " jumped to (" << newX << ", " << newY << "). Jumps left: " << remainingJumps << endl;
+        else {
+            int newX = posX + dx;
+            int newY = posY + dy;
+            battlefield->getLogger()->log(name + " tried to jump but has no jumps left! Proceed with normal movement logic\n") ;
+            battlefield->getLogger()->log(name + " want to move to (" + std::to_string(newX) + "," + std::to_string(newY) + ")\n") ;
+            
+            if(battlefield->isInside(newX, newY) && !battlefield->isOccupied(newX, newY)) {
+                setLocation(newX , newY) ;
+                battlefield->getLogger()->log(name + " moves to (" + std::to_string(posX) + ", " + std::to_string(posY) + ")\n") ;
+            }
+            else {
+                battlefield->getLogger()->log("Cannot move to (" + std::to_string(newX) + "," + std::to_string(newY) + ") : Invalid Position\n") ;
+            }
+        }
     }
 
-    void actionMove(Battlefield* battlefield) override {
-        jump(battlefield);
-    }
-
-    void actions(Battlefield* battlefield) override {
-        actionThink(battlefield);
-        actionLook(battlefield);
-        actionFire(battlefield);
-        actionMove(battlefield);
-    }
-
-    void move(int dx, int dy) override {
-        setLocation(x() + dx, y() + dy);
-    }
+    bool canJump() { return remainingJumps > 0 ; }
 };
 
-class JuggernautBot : public MovingRobot {
+/*class JuggernautBot : public GenericRobot {
 private:
     int moveDistance = 3;
 
@@ -147,7 +112,9 @@ public:
         actionMove(battlefield);
     }
 
+
     void move(int dx, int dy) override {
         setLocation(x() + dx, y() + dy);
     }
 };
+*/
