@@ -1,7 +1,7 @@
 class HideBot : public GenericRobot {
 private:
     int remainingHides = 3;
-    bool hidden = false;
+    bool hidden = false; //flag to see if hidden or nah
 
 public:
     HideBot(string id, int x, int y, Battlefield* bf) : GenericRobot(id, x, y, bf) {
