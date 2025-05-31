@@ -62,7 +62,8 @@ public:
     void enterGraveyard(Robot* robot) ;
     void reviveOne() ;
     void upgrade(Robot* robot) ;
-};
+    Battlefield& operator<<(Robot* robot) ; //operator overloading. basically this one will call createRobot() to insert
+};                                          //new robot into the vector. (bf << robot ;) it's like saying insert robot into battlefield
 
 class Robot {
 protected:
@@ -263,7 +264,7 @@ public:
 class TrackerBot : virtual public GenericRobot {
 private:
     int remainingTracker = 3 ;
-    std::vector<Robot*> trackedRobot ;
+    std::vector<std::string> trackedRobotName ;
 public:
     TrackerBot(const std::string& type, const std::string& name, int x, int y, Battlefield* bf)
         : Robot(type, name, x, y, bf), GenericRobot(type, name, x, y, bf) {
@@ -1384,7 +1385,7 @@ void TrackerBot::look(int dx, int dy) {
         }
     }
 
-    // Scan all robots on the battlefield
+    // perform normal look and put tracker if got tracker remainings.
     for (Robot* other : battlefield->getRobots()) {
         if (!other || other == this || !other->isAlive())
             continue;
@@ -1398,8 +1399,8 @@ void TrackerBot::look(int dx, int dy) {
 
                 // Track if not already tracked
                 if (remainingTracker > 0 &&
-                    std::find(trackedRobot.begin(), trackedRobot.end(), other) == trackedRobot.end()) {
-                    trackedRobot.push_back(other);
+                    std::find(trackedRobotName.begin(), trackedRobotName.end(), other->getName()) == trackedRobotName.end()) {
+                    trackedRobotName.push_back(other->getName());
                     remainingTracker--;
                     battlefield->getLogger()->log(getName() + " put a tracker on " +
                         other->getName() + ". Remaining tracker left: " +
@@ -1410,19 +1411,17 @@ void TrackerBot::look(int dx, int dy) {
         }
     }
 
-    // Remove nullptrs
-    trackedRobot.erase(
-        std::remove(trackedRobot.begin(), trackedRobot.end(), nullptr),
-        trackedRobot.end()
-    );
+
 
     // Log tracked robots
-    for (Robot* robot : trackedRobot) {
-        if (robot && robot->isAlive()) {
-            battlefield->getLogger()->log(getName() + " sees "
-                                          + robot->getName() + " at ("
-                                          + std::to_string(robot->getX()) + ","
-                                          + std::to_string(robot->getY()) + ") from the tracker.\n");
+    for(Robot* robot : battlefield->getRobots()) {
+        for (std::string& trackedName : trackedRobotName) {
+            if (robot && robot->isAlive() && robot->getName() == trackedName) {
+                battlefield->getLogger()->log(getName() + " sees "
+                                              + robot->getName() + " at ("
+                                              + std::to_string(robot->getX()) + ","
+                                              + std::to_string(robot->getY()) + ") from the tracker.\n");
+            }
         }
     }
 }
@@ -1480,7 +1479,7 @@ void Battlefield::loadFromFile(const std::string& filename) {
             while(true) {
                 if(isInside(x, y) && !isOccupied(x, y)) {
                     Robot* robot = new GenericRobot(type, name, x, y, this);
-                    createRobot(robot) ;
+                    *this << robot ;  //operator overloading
 
                     grid[y][x] = name.substr(0,3);
                     getLogger()->log("Loaded robot " + name + " at (" + std::to_string(x) + ", " + std::to_string(y) + ")\n");
@@ -1507,17 +1506,7 @@ void Battlefield::runSimulation() {
 
         reviveOne() ;                         //try to revive one robot from the queue
 
-        for (auto it = robots.begin(); it != robots.end(); ) {   //erase nullptr from the vectors if there exist
-            if (*it == nullptr) {
-                it = robots.erase(it);
-            } else {
-                ++it;
-            }
-        }
-
         for(Robot* robot : robots) {         //each robot take turn
-
-
             if (robot->isAlive()) {
                 robot->takeTurn();
             }
@@ -1529,7 +1518,6 @@ void Battlefield::runSimulation() {
                     getLogger()->log(robot->getName() + " is ded. Sent to graveyard.\n") ;
                     enterGraveyard(robot) ;
                 }
-
             }
         }
 
@@ -1641,7 +1629,7 @@ void Battlefield::reviveOne() {
                     revivedRobot = new GenericRobot("GenericRobot", deadRobot->getName(), newX, newY, this) ;
                     revivedRobot->setRevivals(deadRobot->getRevivals()) ;
                     revivedRobot->reset() ;
-                    createRobot(revivedRobot) ;
+                    *this << revivedRobot ;
 
                     graveyard.erase(graveyard.begin());  //kick out of the queue
                     robots.erase(std::remove(robots.begin(), robots.end(), deadRobot), robots.end());  //kick out of robots vector
@@ -1684,7 +1672,7 @@ void Battlefield::upgrade(Robot* robot) {
 
         upgradedRobot->setRevivals(robot->getRevivals()) ;               //copy the revivals
         upgradedRobot->setUpgradePoints(robot->getUpgradePoints() - 1) ; //copy the upgradePoints minus one
-        createRobot(upgradedRobot) ;
+        *this << upgradedRobot ;
 
         getLogger()->log(upgradedRobot->getName() + " has been upgraded into " + upgradedRobot->getType() + "\n") ;
 
@@ -1718,7 +1706,7 @@ void Battlefield::upgrade(Robot* robot) {
 
         upgradedRobot->setRevivals(robot->getRevivals()) ;  //copy the remainingRevivals
         upgradedRobot->setUpgradePoints(robot->getUpgradePoints() - 1) ; //copy the upgradePoints minus one
-        createRobot(upgradedRobot) ;
+        *this << upgradedRobot ;
 
         getLogger()->log(upgradedRobot->getName() + " has been upgraded into " + upgradedRobot->getType() + "\n") ;
 
@@ -1752,7 +1740,7 @@ void Battlefield::upgrade(Robot* robot) {
 
         upgradedRobot->setRevivals(robot->getRevivals()) ;  //copy the remainingRevivals
         upgradedRobot->setUpgradePoints(robot->getUpgradePoints() - 1) ; //copy the upgradePoints minus one
-        createRobot(upgradedRobot) ;
+        *this << upgradedRobot ;
 
         getLogger()->log(upgradedRobot->getName() + " has been upgraded into " + upgradedRobot->getType() + "\n") ;
 
@@ -1786,7 +1774,7 @@ void Battlefield::upgrade(Robot* robot) {
 
         upgradedRobot->setRevivals(robot->getRevivals()) ;  //copy the remainingRevivals
         upgradedRobot->setUpgradePoints(robot->getUpgradePoints() - 1) ; //copy the upgradePoints minus one
-        createRobot(upgradedRobot) ;
+        *this << upgradedRobot ;
 
         getLogger()->log(upgradedRobot->getName() + " has been upgraded into " + upgradedRobot->getType() + "\n") ;
 
@@ -1811,7 +1799,7 @@ void Battlefield::upgrade(Robot* robot) {
 
         upgradedRobot->setRevivals(robot->getRevivals()) ;  //copy the remainingRevivals
         upgradedRobot->setUpgradePoints(robot->getUpgradePoints() - 1) ; //copy the upgradePoints minus one
-        createRobot(upgradedRobot) ;
+        *this << upgradedRobot ;
 
         getLogger()->log(upgradedRobot->getName() + " has been upgraded into " + upgradedRobot->getType() + "\n") ;
 
@@ -1836,7 +1824,7 @@ void Battlefield::upgrade(Robot* robot) {
 
         upgradedRobot->setRevivals(robot->getRevivals()) ;  //copy the remainingRevivals
         upgradedRobot->setUpgradePoints(robot->getUpgradePoints() - 1) ; //copy the upgradePoints minus one
-        createRobot(upgradedRobot) ;
+        *this << upgradedRobot ;
 
         getLogger()->log(upgradedRobot->getName() + " has been upgraded into " + upgradedRobot->getType() + "\n") ;
 
@@ -1861,7 +1849,7 @@ void Battlefield::upgrade(Robot* robot) {
 
         upgradedRobot->setRevivals(robot->getRevivals()) ;  //copy the remainingRevivals
         upgradedRobot->setUpgradePoints(robot->getUpgradePoints() - 1) ; //copy the upgradePoints minus one
-        createRobot(upgradedRobot) ;
+        *this << upgradedRobot ;
 
         getLogger()->log(upgradedRobot->getName() + " has been upgraded into " + upgradedRobot->getType() + "\n") ;
 
@@ -1886,7 +1874,7 @@ void Battlefield::upgrade(Robot* robot) {
 
         upgradedRobot->setRevivals(robot->getRevivals()) ;  //copy the remainingRevivals
         upgradedRobot->setUpgradePoints(robot->getUpgradePoints() - 1) ; //copy the upgradePoints minus one
-        createRobot(upgradedRobot) ;
+        *this << upgradedRobot ;
 
         getLogger()->log(upgradedRobot->getName() + " has been upgraded into " + upgradedRobot->getType() + "\n") ;
 
@@ -1911,7 +1899,7 @@ void Battlefield::upgrade(Robot* robot) {
 
         upgradedRobot->setRevivals(robot->getRevivals()) ;  //copy the remainingRevivals
         upgradedRobot->setUpgradePoints(robot->getUpgradePoints() - 1) ; //copy the upgradePoints minus one
-        createRobot(upgradedRobot) ;
+        *this << upgradedRobot ;
 
         getLogger()->log(upgradedRobot->getName() + " has been upgraded into " + upgradedRobot->getType() + "\n") ;
 
@@ -1936,7 +1924,7 @@ void Battlefield::upgrade(Robot* robot) {
 
         upgradedRobot->setRevivals(robot->getRevivals()) ;  //copy the remainingRevivals
         upgradedRobot->setUpgradePoints(robot->getUpgradePoints() - 1) ; //copy the upgradePoints minus one
-        createRobot(upgradedRobot) ;
+        *this << upgradedRobot ;
 
         getLogger()->log(upgradedRobot->getName() + " has been upgraded into " + upgradedRobot->getType() + "\n") ;
 
@@ -1961,7 +1949,7 @@ void Battlefield::upgrade(Robot* robot) {
 
         upgradedRobot->setRevivals(robot->getRevivals()) ;  //copy the remainingRevivals
         upgradedRobot->setUpgradePoints(robot->getUpgradePoints() - 1) ; //copy the upgradePoints minus one
-        createRobot(upgradedRobot) ;
+        *this << upgradedRobot ;
 
         getLogger()->log(upgradedRobot->getName() + " has been upgraded into " + upgradedRobot->getType() + "\n") ;
 
@@ -1986,7 +1974,7 @@ void Battlefield::upgrade(Robot* robot) {
 
         upgradedRobot->setRevivals(robot->getRevivals()) ;  //copy the remainingRevivals
         upgradedRobot->setUpgradePoints(robot->getUpgradePoints() - 1) ; //copy the upgradePoints minus one
-        createRobot(upgradedRobot) ;
+        *this << upgradedRobot ;
 
         getLogger()->log(upgradedRobot->getName() + " has been upgraded into " + upgradedRobot->getType() + "\n") ;
 
@@ -2011,7 +1999,7 @@ void Battlefield::upgrade(Robot* robot) {
 
         upgradedRobot->setRevivals(robot->getRevivals()) ;  //copy the remainingRevivals
         upgradedRobot->setUpgradePoints(robot->getUpgradePoints() - 1) ; //copy the upgradePoints minus one
-        createRobot(upgradedRobot) ;
+        *this << upgradedRobot ;
 
         getLogger()->log(upgradedRobot->getName() + " has been upgraded into " + upgradedRobot->getType() + "\n") ;
 
@@ -2036,7 +2024,7 @@ void Battlefield::upgrade(Robot* robot) {
 
         upgradedRobot->setRevivals(robot->getRevivals()) ;  //copy the remainingRevivals
         upgradedRobot->setUpgradePoints(robot->getUpgradePoints() - 1) ; //copy the upgradePoints minus one
-        createRobot(upgradedRobot) ;
+        *this << upgradedRobot ;
 
         getLogger()->log(upgradedRobot->getName() + " has been upgraded into " + upgradedRobot->getType() + "\n") ;
 
@@ -2061,7 +2049,7 @@ void Battlefield::upgrade(Robot* robot) {
 
         upgradedRobot->setRevivals(robot->getRevivals()) ;  //copy the remainingRevivals
         upgradedRobot->setUpgradePoints(robot->getUpgradePoints() - 1) ; //copy the upgradePoints minus one
-        createRobot(upgradedRobot) ;
+        *this << upgradedRobot ;
 
         getLogger()->log(upgradedRobot->getName() + " has been upgraded into " + upgradedRobot->getType() + "\n") ;
 
@@ -2086,7 +2074,7 @@ void Battlefield::upgrade(Robot* robot) {
 
         upgradedRobot->setRevivals(robot->getRevivals()) ;  //copy the remainingRevivals
         upgradedRobot->setUpgradePoints(robot->getUpgradePoints() - 1) ; //copy the upgradePoints minus one
-        createRobot(upgradedRobot) ;
+        *this << upgradedRobot ;
 
         getLogger()->log(upgradedRobot->getName() + " has been upgraded into " + upgradedRobot->getType() + "\n") ;
 
@@ -2111,7 +2099,7 @@ void Battlefield::upgrade(Robot* robot) {
 
         upgradedRobot->setRevivals(robot->getRevivals()) ;  //copy the remainingRevivals
         upgradedRobot->setUpgradePoints(robot->getUpgradePoints() - 1) ; //copy the upgradePoints minus one
-        createRobot(upgradedRobot) ;
+        *this << upgradedRobot ;
 
         getLogger()->log(upgradedRobot->getName() + " has been upgraded into " + upgradedRobot->getType() + "\n") ;
 
@@ -2136,7 +2124,7 @@ void Battlefield::upgrade(Robot* robot) {
 
         upgradedRobot->setRevivals(robot->getRevivals()) ;  //copy the remainingRevivals
         upgradedRobot->setUpgradePoints(robot->getUpgradePoints() - 1) ; //copy the upgradePoints minus one
-        createRobot(upgradedRobot) ;
+        *this << upgradedRobot ;
 
         getLogger()->log(upgradedRobot->getName() + " has been upgraded into " + upgradedRobot->getType() + "\n") ;
 
@@ -2161,7 +2149,7 @@ void Battlefield::upgrade(Robot* robot) {
 
         upgradedRobot->setRevivals(robot->getRevivals()) ;  //copy the remainingRevivals
         upgradedRobot->setUpgradePoints(robot->getUpgradePoints() - 1) ; //copy the upgradePoints minus one
-        createRobot(upgradedRobot) ;
+        *this << upgradedRobot ;
 
         getLogger()->log(upgradedRobot->getName() + " has been upgraded into " + upgradedRobot->getType() + "\n") ;
 
@@ -2172,6 +2160,11 @@ void Battlefield::upgrade(Robot* robot) {
         return ;
     }
 }
+
+Battlefield& Battlefield::operator<<(Robot* robot) {
+        createRobot(robot);
+        return *this;
+    }
 
 Logger* Battlefield::getLogger() {
     return logger;
@@ -2199,5 +2192,6 @@ int main() {
     Battlefield battlefield(MAX_ROWS, MAX_COLS);
     battlefield.loadFromFile("input.txt");
     battlefield.runSimulation();
+
     return 0;
 }
