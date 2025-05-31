@@ -62,7 +62,7 @@ public:
     void enterGraveyard(Robot* robot) ;
     void reviveOne() ;
     void upgrade(Robot* robot) ;
-    Robot* createUpgradedRobot(Robot* robot)
+    Robot* createUpgradedRobot(Robot* robot) ;
     Battlefield& operator<<(Robot* robot) ; //operator overloading. basically this one will call createRobot() to insert
 };                                          //new robot into the vector. (bf << robot ;) it's like saying insert robot into battlefield
 
