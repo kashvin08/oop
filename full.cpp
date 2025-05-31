@@ -1569,25 +1569,25 @@ void Battlefield::display() {
             grid[robot->getY()][robot->getX()] = "+" + robot->getName().substr(0, 3);
     }
 
-    std::cout << "+___" ;
+    getLogger()->log("+___") ;
     for (int x = 0; x < cols; ++x) {
         if (x < 10)
-            std::cout << "+_" << x << "_" ;
+            getLogger()->log("+_" + std::to_string(x) + "_") ;
         else
-            std::cout << "+_" << x ;
+            getLogger()->log("+_" + std::to_string(x)) ;
     }
-    std::cout << "\n";
+    getLogger()->log("\n") ;
 
     for (int y = 0; y < rows; ++y) {
         if (y < 10)
-            std::cout << "+_" << y << "_" ;
+            getLogger()->log("+_" + std::to_string(y) + "_") ;
         else
-            std::cout << "+_" << y ;
+            getLogger()->log("+_" + std::to_string(y)) ;
 
         for (int x = 0; x < cols; ++x) {
-            std::cout << grid[y][x];
+            getLogger()->log(grid[y][x]) ;
         }
-        std::cout << "\n";
+        getLogger()->log("\n") ;
     }
 }
 
