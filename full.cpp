@@ -62,6 +62,7 @@ public:
     void enterGraveyard(Robot* robot) ;
     void reviveOne() ;
     void upgrade(Robot* robot) ;
+    Robot* createUpgradedRobot(Robot* robot)
     Battlefield& operator<<(Robot* robot) ; //operator overloading. basically this one will call createRobot() to insert
 };                                          //new robot into the vector. (bf << robot ;) it's like saying insert robot into battlefield
 
@@ -1653,512 +1654,151 @@ void Battlefield::reviveOne() {
 }
 
 void Battlefield::upgrade(Robot* robot) {
-
-    if(robot->getType() == "GenericRobot") {      //first upgrade
-        int choice = rand() % 3;                  //0 HideBot, 1 JumpBot, 2 JuggernautBot
-
-        GenericRobot* upgradedRobot ;
-        if (choice == 0) {
-            // Upgrade to HideBot
-            upgradedRobot = new HideBot("HideBot", robot->getName(), robot->getX(), robot->getY(), this);
-        }
-        else if (choice == 1) {
-            // Upgrade to JumpBot
-            upgradedRobot = new JumpBot("JumpBot", robot->getName(), robot->getX(), robot->getY(), this);
-        }
-        else {
-            upgradedRobot = new JuggernautBot("JuggernautBot", robot->getName(), robot->getX(), robot->getY(), this);
-        }
-
-        upgradedRobot->setRevivals(robot->getRevivals()) ;               //copy the revivals
-        upgradedRobot->setUpgradePoints(robot->getUpgradePoints() - 1) ; //copy the upgradePoints minus one
-        *this << upgradedRobot ;
-
-        getLogger()->log(upgradedRobot->getName() + " has been upgraded into " + upgradedRobot->getType() + "\n") ;
-
-        robots.erase(std::remove(robots.begin(), robots.end(), robot), robots.end());  //remove the beforeUpgradeState from the vector
-        delete robot ;
-
-        upgradedRobot->setUpgradeFirst(true)  ;
-        return ;
+    Robot* upgradedRobot = createUpgradedRobot(robot);
+    if (upgradedRobot) {
+        upgradedRobot->setRevivals(robot->getRevivals());
+        upgradedRobot->setUpgradePoints(robot->getUpgradePoints() - 1);
+        *this << upgradedRobot;
+        getLogger()->log(upgradedRobot->getName() + " upgradedRobot to " + upgradedRobot->getType() + "\n");
+        robots.erase(std::remove(robots.begin(), robots.end(), robot), robots.end());
+        delete robot;
     }
-    else if(robot->getType() == "HideBot") {      //for second upgrades
-        int choice = rand() % 5;                  //0 Longshot, 1 Semiauto, 2 Thirtyshot, 3 truedamage, 4 lifesteal
+}
 
-        HideBot* upgradedRobot ;
-        if (choice == 0) {
-            // Upgrade to HideBot
-            upgradedRobot = new HideLongshotBot("HideLongshotBot", robot->getName(), robot->getX(), robot->getY(), this);
-        }
-        else if (choice == 1) {
-            // Upgrade to JumpBot
-            upgradedRobot = new HideSemiautoBot("HideSemiautoBot", robot->getName(), robot->getX(), robot->getY(), this);
-        }
-        else if (choice == 2) {
-            upgradedRobot = new HideThirtyshotBot("HideThirtyshotBot", robot->getName(), robot->getX(), robot->getY(), this);
-        }
-        else if (choice == 3) {
-            upgradedRobot = new HideTrueDamageBot("HideTrueDamageBot", robot->getName(), robot->getX(), robot->getY(), this);
-        }
-        else if (choice == 4) {
-            upgradedRobot = new HideLifestealBot("HideLifestealBot", robot->getName(), robot->getX(), robot->getY(), this);
-        }
+Robot* Battlefield::createUpgradedRobot(Robot* robot) {
+    std::string type = robot->getType();
+    std::string name = robot->getName();
+    int x = robot->getX();
+    int y = robot->getY();
 
-        upgradedRobot->setRevivals(robot->getRevivals()) ;  //copy the remainingRevivals
-        upgradedRobot->setUpgradePoints(robot->getUpgradePoints() - 1) ; //copy the upgradePoints minus one
-        *this << upgradedRobot ;
+    Robot* upgradedRobot = nullptr;
 
-        getLogger()->log(upgradedRobot->getName() + " has been upgraded into " + upgradedRobot->getType() + "\n") ;
-
-        robots.erase(std::remove(robots.begin(), robots.end(), robot), robots.end());  //remove the beforeUpgradeState from the vector
-        delete robot ;
-
-        upgradedRobot->setUpgradeSecond(true)  ;
-        return ;
+    if (type == "GenericRobot") {
+        int choice = rand() % 3;
+        if (choice == 0) upgradedRobot = new HideBot("HideBot", name, x, y, this);
+        else if (choice == 1) upgradedRobot = new JumpBot("JumpBot", name, x, y, this);
+        else upgradedRobot = new JuggernautBot("JuggernautBot", name, x, y, this);
+        if (upgradedRobot) upgradedRobot->setUpgradeFirst(true) ;
     }
-    else if(robot->getType() == "JumpBot") {
-        int choice = rand() % 5;                  //0 Longshot, 1 Semiauto, 2 Thirtyshot, 3 truedamage, 4 lifesteal
-
-        JumpBot* upgradedRobot ;
-        if (choice == 0) {
-            // Upgrade to HideBot
-            upgradedRobot = new JumpLongshotBot("JumpLongshotBot", robot->getName(), robot->getX(), robot->getY(), this);
-        }
-        else if (choice == 1) {
-            // Upgrade to JumpBot
-            upgradedRobot = new JumpSemiautoBot("JumpSemiautoBot", robot->getName(), robot->getX(), robot->getY(), this);
-        }
-        else if (choice == 2) {
-            upgradedRobot = new JumpThirtyshotBot("JumpThirtyshotBot", robot->getName(), robot->getX(), robot->getY(), this);
-        }
-        else if (choice == 3) {
-            upgradedRobot = new JumpTrueDamageBot("JumpTrueDamageBot", robot->getName(), robot->getX(), robot->getY(), this);
-        }
-        else if (choice == 4) {
-            upgradedRobot = new JumpLifestealBot("JumpLifestealBot", robot->getName(), robot->getX(), robot->getY(), this);
-        }
-
-        upgradedRobot->setRevivals(robot->getRevivals()) ;  //copy the remainingRevivals
-        upgradedRobot->setUpgradePoints(robot->getUpgradePoints() - 1) ; //copy the upgradePoints minus one
-        *this << upgradedRobot ;
-
-        getLogger()->log(upgradedRobot->getName() + " has been upgraded into " + upgradedRobot->getType() + "\n") ;
-
-        robots.erase(std::remove(robots.begin(), robots.end(), robot), robots.end());  //remove the beforeUpgradeState from the vector
-        delete robot ;
-
-        upgradedRobot->setUpgradeSecond(true)  ;
-        return ;
+    else if (type == "HideBot") {
+        int choice = rand() % 5;
+        if (choice == 0) upgradedRobot = new HideLongshotBot("HideLongshotBot", name, x, y, this);
+        else if (choice == 1) upgradedRobot = new HideSemiautoBot("HideSemiautoBot", name, x, y, this);
+        else if (choice == 2) upgradedRobot = new HideThirtyshotBot("HideThirtyshotBot", name, x, y, this);
+        else if (choice == 3) upgradedRobot = new HideTrueDamageBot("HideTrueDamageBot", name, x, y, this);
+        else upgradedRobot = new HideLifestealBot("HideLifestealBot", name, x, y, this);
+        if (upgradedRobot) upgradedRobot->setUpgradeSecond(true);
     }
-    else if(robot->getType() == "JuggernautBot") {
-        int choice = rand() % 5;                  //0 Longshot, 1 Semiauto, 2 Thirtyshot, 3 truedamage, 4 lifesteal
-
-        JuggernautBot* upgradedRobot ;
-        if (choice == 0) {
-            // Upgrade to HideBot
-            upgradedRobot = new JuggernautLongshotBot("JuggernautLongshotBot", robot->getName(), robot->getX(), robot->getY(), this);
-        }
-        else if (choice == 1) {
-            // Upgrade to JumpBot
-            upgradedRobot = new JuggernautSemiautoBot("JuggernautSemiautoBot", robot->getName(), robot->getX(), robot->getY(), this);
-        }
-        else if (choice == 2) {
-            upgradedRobot = new JuggernautThirtyshotBot("JuggernautThirtyshotBot", robot->getName(), robot->getX(), robot->getY(), this);
-        }
-        else if (choice == 3) {
-            upgradedRobot = new JuggernautTrueDamageBot("JuggernautTrueDamageBot", robot->getName(), robot->getX(), robot->getY(), this);
-        }
-        else if (choice == 4) {
-            upgradedRobot = new JuggernautLifestealBot("JuggernautLifestealBot", robot->getName(), robot->getX(), robot->getY(), this);
-        }
-
-        upgradedRobot->setRevivals(robot->getRevivals()) ;  //copy the remainingRevivals
-        upgradedRobot->setUpgradePoints(robot->getUpgradePoints() - 1) ; //copy the upgradePoints minus one
-        *this << upgradedRobot ;
-
-        getLogger()->log(upgradedRobot->getName() + " has been upgraded into " + upgradedRobot->getType() + "\n") ;
-
-        robots.erase(std::remove(robots.begin(), robots.end(), robot), robots.end());  //remove the beforeUpgradeState from the vector
-        delete robot ;
-
-        upgradedRobot->setUpgradeSecond(true)  ;
-        return ;
+    else if (type == "JumpBot") {
+        int choice = rand() % 5;
+        if (choice == 0) upgradedRobot = new JumpLongshotBot("JumpLongshotBot", name, x, y, this);
+        else if (choice == 1) upgradedRobot = new JumpSemiautoBot("JumpSemiautoBot", name, x, y, this);
+        else if (choice == 2) upgradedRobot = new JumpThirtyshotBot("JumpThirtyshotBot", name, x, y, this);
+        else if (choice == 3) upgradedRobot = new JumpTrueDamageBot("JumpTrueDamageBot", name, x, y, this);
+        else upgradedRobot = new JumpLifestealBot("JumpLifestealBot", name, x, y, this);
+        if (upgradedRobot) upgradedRobot->setUpgradeSecond(true);
     }
-    else if(robot->getType() == "HideLongshotBot") {   //third upgrade
-        int choice = rand() % 2;                  //0 scout, 1 tracker
-
-        HideLongshotBot* upgradedRobot ;
-        if (choice == 0) {
-            // Upgrade to HideBot
-            upgradedRobot = new HideLongshotScoutBot("HideLongshotScoutBot", robot->getName(), robot->getX(), robot->getY(), this);
-        }
-        else if (choice == 1) {
-            // Upgrade to JumpBot
-            upgradedRobot = new HideLongshotTrackerBot("HideLongshotTrackerBot", robot->getName(), robot->getX(), robot->getY(), this);
-        }
-
-        upgradedRobot->setRevivals(robot->getRevivals()) ;  //copy the remainingRevivals
-        upgradedRobot->setUpgradePoints(robot->getUpgradePoints() - 1) ; //copy the upgradePoints minus one
-        *this << upgradedRobot ;
-
-        getLogger()->log(upgradedRobot->getName() + " has been upgraded into " + upgradedRobot->getType() + "\n") ;
-
-        robots.erase(std::remove(robots.begin(), robots.end(), robot), robots.end());  //remove the beforeUpgradeState from the vector
-        delete robot ;
-
-        upgradedRobot->setUpgradeThird(true)  ;
-        return ;
+    else if (type == "JuggernautBot") {
+        int choice = rand() % 5;
+        if (choice == 0) upgradedRobot = new JuggernautLongshotBot("JuggernautLongshotBot", name, x, y, this);
+        else if (choice == 1) upgradedRobot = new JuggernautSemiautoBot("JuggernautSemiautoBot", name, x, y, this);
+        else if (choice == 2) upgradedRobot = new JuggernautThirtyshotBot("JuggernautThirtyshotBot", name, x, y, this);
+        else if (choice == 3) upgradedRobot = new JuggernautTrueDamageBot("JuggernautTrueDamageBot", name, x, y, this);
+        else upgradedRobot = new JuggernautLifestealBot("JuggernautLifestealBot", name, x, y, this);
+        if (upgradedRobot) upgradedRobot->setUpgradeSecond(true);
     }
-    else if(robot->getType() == "HideSemiautoBot") {
-        int choice = rand() % 2;                  //0 scout, 1 tracker
-
-        HideSemiautoBot* upgradedRobot ;
-        if (choice == 0) {
-            // Upgrade to HideBot
-            upgradedRobot = new HideSemiautoScoutBot("HideSemiautoScoutBot", robot->getName(), robot->getX(), robot->getY(), this);
-        }
-        else if (choice == 1) {
-            // Upgrade to JumpBot
-            upgradedRobot = new HideSemiautoTrackerBot("HideSemiautoTrackerBot", robot->getName(), robot->getX(), robot->getY(), this);
-        }
-
-        upgradedRobot->setRevivals(robot->getRevivals()) ;  //copy the remainingRevivals
-        upgradedRobot->setUpgradePoints(robot->getUpgradePoints() - 1) ; //copy the upgradePoints minus one
-        *this << upgradedRobot ;
-
-        getLogger()->log(upgradedRobot->getName() + " has been upgraded into " + upgradedRobot->getType() + "\n") ;
-
-        robots.erase(std::remove(robots.begin(), robots.end(), robot), robots.end());  //remove the beforeUpgradeState from the vector
-        delete robot ;
-
-        upgradedRobot->setUpgradeThird(true)  ;
-        return ;
+    else if (type == "HideLongshotBot") {
+        int choice = rand() % 2;
+        if (choice == 0) upgradedRobot = new HideLongshotScoutBot("HideLongshotScoutBot", name, x, y, this);
+        else upgradedRobot = new HideLongshotTrackerBot("HideLongshotTrackerBot", name, x, y, this);
+        if (upgradedRobot) upgradedRobot->setUpgradeThird(true);
     }
-    else if(robot->getType() == "HideThirtyshotBot") {
-        int choice = rand() % 2;                  //0 scout, 1 tracker
-
-        HideThirtyshotBot* upgradedRobot ;
-        if (choice == 0) {
-            // Upgrade to HideBot
-            upgradedRobot = new HideThirtyshotScoutBot("HideThirtyshotScoutBot", robot->getName(), robot->getX(), robot->getY(), this);
-        }
-        else if (choice == 1) {
-            // Upgrade to JumpBot
-            upgradedRobot = new HideThirtyshotTrackerBot("HideThirtyshotTrackerBot", robot->getName(), robot->getX(), robot->getY(), this);
-        }
-
-        upgradedRobot->setRevivals(robot->getRevivals()) ;  //copy the remainingRevivals
-        upgradedRobot->setUpgradePoints(robot->getUpgradePoints() - 1) ; //copy the upgradePoints minus one
-        *this << upgradedRobot ;
-
-        getLogger()->log(upgradedRobot->getName() + " has been upgraded into " + upgradedRobot->getType() + "\n") ;
-
-        robots.erase(std::remove(robots.begin(), robots.end(), robot), robots.end());  //remove the beforeUpgradeState from the vector
-        delete robot ;
-
-        upgradedRobot->setUpgradeThird(true)  ;
-        return ;
+    if (type == "HideSemiautoBot") {
+        int choice = rand() % 2;
+        if (choice == 0) upgradedRobot = new HideSemiautoScoutBot("HideSemiautoScoutBot", name, x, y, this);
+        else upgradedRobot = new HideSemiautoTrackerBot("HideSemiautoTrackerBot", name, x, y, this);
+        if (upgradedRobot) upgradedRobot->setUpgradeThird(true);
     }
-    else if(robot->getType() == "HideTrueDamageBot") {
-        int choice = rand() % 2;                  //0 scout, 1 tracker
-
-        HideTrueDamageBot* upgradedRobot ;
-        if (choice == 0) {
-            // Upgrade to HideBot
-            upgradedRobot = new HideTrueDamageScoutBot("HideTrueDamageScoutBot", robot->getName(), robot->getX(), robot->getY(), this);
-        }
-        else if (choice == 1) {
-            // Upgrade to JumpBot
-            upgradedRobot = new HideTrueDamageTrackerBot("HideTrueDamageTrackerBot", robot->getName(), robot->getX(), robot->getY(), this);
-        }
-
-        upgradedRobot->setRevivals(robot->getRevivals()) ;  //copy the remainingRevivals
-        upgradedRobot->setUpgradePoints(robot->getUpgradePoints() - 1) ; //copy the upgradePoints minus one
-        *this << upgradedRobot ;
-
-        getLogger()->log(upgradedRobot->getName() + " has been upgraded into " + upgradedRobot->getType() + "\n") ;
-
-        robots.erase(std::remove(robots.begin(), robots.end(), robot), robots.end());  //remove the beforeUpgradeState from the vector
-        delete robot ;
-
-        upgradedRobot->setUpgradeThird(true)  ;
-        return ;
+    else if (type == "HideThirtyshotBot") {
+        int choice = rand() % 2;
+        if (choice == 0) upgradedRobot = new HideThirtyshotScoutBot("HideThirtyshotScoutBot", name, x, y, this);
+        else upgradedRobot = new HideThirtyshotTrackerBot("HideThirtyshotTrackerBot", name, x, y, this);
+        if (upgradedRobot) upgradedRobot->setUpgradeThird(true);
     }
-    else if(robot->getType() == "HideLifestealBot") {
-        int choice = rand() % 2;                  //0 scout, 1 tracker
-
-        HideLifestealBot* upgradedRobot ;
-        if (choice == 0) {
-            // Upgrade to HideBot
-            upgradedRobot = new HideLifestealScoutBot("HideLifestealScoutBot", robot->getName(), robot->getX(), robot->getY(), this);
-        }
-        else if (choice == 1) {
-            // Upgrade to JumpBot
-            upgradedRobot = new HideLifestealTrackerBot("HideLifestealTrackerBot", robot->getName(), robot->getX(), robot->getY(), this);
-        }
-
-        upgradedRobot->setRevivals(robot->getRevivals()) ;  //copy the remainingRevivals
-        upgradedRobot->setUpgradePoints(robot->getUpgradePoints() - 1) ; //copy the upgradePoints minus one
-        *this << upgradedRobot ;
-
-        getLogger()->log(upgradedRobot->getName() + " has been upgraded into " + upgradedRobot->getType() + "\n") ;
-
-        robots.erase(std::remove(robots.begin(), robots.end(), robot), robots.end());  //remove the beforeUpgradeState from the vector
-        delete robot ;
-
-        upgradedRobot->setUpgradeThird(true)  ;
-        return ;
+    else if (type == "HideTrueDamageBot") {
+        int choice = rand() % 2;
+        if (choice == 0) upgradedRobot = new HideTrueDamageScoutBot("HideTrueDamageScoutBot", name, x, y, this);
+        else upgradedRobot = new HideTrueDamageTrackerBot("HideTrueDamageTrackerBot", name, x, y, this);
+        if (upgradedRobot) upgradedRobot->setUpgradeThird(true);
     }
-    else if(robot->getType() == "JumpLongshotBot") {
-        int choice = rand() % 2;                  //0 scout, 1 tracker
-
-        JumpLongshotBot* upgradedRobot ;
-        if (choice == 0) {
-            // Upgrade to HideBot
-            upgradedRobot = new JumpLongshotScoutBot("JumpLongshotScoutBot", robot->getName(), robot->getX(), robot->getY(), this);
-        }
-        else if (choice == 1) {
-            // Upgrade to JumpBot
-            upgradedRobot = new JumpLongshotTrackerBot("JumpLongshotTrackerBot", robot->getName(), robot->getX(), robot->getY(), this);
-        }
-
-        upgradedRobot->setRevivals(robot->getRevivals()) ;  //copy the remainingRevivals
-        upgradedRobot->setUpgradePoints(robot->getUpgradePoints() - 1) ; //copy the upgradePoints minus one
-        *this << upgradedRobot ;
-
-        getLogger()->log(upgradedRobot->getName() + " has been upgraded into " + upgradedRobot->getType() + "\n") ;
-
-        robots.erase(std::remove(robots.begin(), robots.end(), robot), robots.end());  //remove the beforeUpgradeState from the vector
-        delete robot ;
-
-        upgradedRobot->setUpgradeThird(true)  ;
-        return ;
+    else if (type == "HideLifestealBot") {
+        int choice = rand() % 2;
+        if (choice == 0) upgradedRobot = new HideLifestealScoutBot("HideLifestealScoutBot", name, x, y, this);
+        else upgradedRobot = new HideLifestealTrackerBot("HideLifestealTrackerBot", name, x, y, this);
+        if (upgradedRobot) upgradedRobot->setUpgradeThird(true);
     }
-    else if(robot->getType() == "JumpSemiautoBot") {
-        int choice = rand() % 2;                  //0 scout, 1 tracker
-
-        JumpSemiautoBot* upgradedRobot ;
-        if (choice == 0) {
-            // Upgrade to HideBot
-            upgradedRobot = new JumpSemiautoScoutBot("JumpSemiautoScoutBot", robot->getName(), robot->getX(), robot->getY(), this);
-        }
-        else if (choice == 1) {
-            // Upgrade to JumpBot
-            upgradedRobot = new JumpSemiautoTrackerBot("JumpSemiautoTrackerBot", robot->getName(), robot->getX(), robot->getY(), this);
-        }
-
-        upgradedRobot->setRevivals(robot->getRevivals()) ;  //copy the remainingRevivals
-        upgradedRobot->setUpgradePoints(robot->getUpgradePoints() - 1) ; //copy the upgradePoints minus one
-        *this << upgradedRobot ;
-
-        getLogger()->log(upgradedRobot->getName() + " has been upgraded into " + upgradedRobot->getType() + "\n") ;
-
-        robots.erase(std::remove(robots.begin(), robots.end(), robot), robots.end());  //remove the beforeUpgradeState from the vector
-        delete robot ;
-
-        upgradedRobot->setUpgradeThird(true)  ;
-        return ;
+    else if (type == "JumpLongshotBot") {
+        int choice = rand() % 2;
+        if (choice == 0) upgradedRobot = new JumpLongshotScoutBot("JumpLongshotScoutBot", name, x, y, this);
+        else upgradedRobot = new JumpLongshotTrackerBot("JumpLongshotTrackerBot", name, x, y, this);
+        if (upgradedRobot) upgradedRobot->setUpgradeThird(true);
     }
-    else if(robot->getType() == "JumpThirtyshotBot") {
-        int choice = rand() % 2;                  //0 scout, 1 tracker
-
-        JumpThirtyshotBot* upgradedRobot ;
-        if (choice == 0) {
-            // Upgrade to HideBot
-            upgradedRobot = new JumpThirtyshotScoutBot("JumpThirtyshotScoutBot", robot->getName(), robot->getX(), robot->getY(), this);
-        }
-        else if (choice == 1) {
-            // Upgrade to JumpBot
-            upgradedRobot = new JumpThirtyshotTrackerBot("JumpThirtyshotTrackerBot", robot->getName(), robot->getX(), robot->getY(), this);
-        }
-
-        upgradedRobot->setRevivals(robot->getRevivals()) ;  //copy the remainingRevivals
-        upgradedRobot->setUpgradePoints(robot->getUpgradePoints() - 1) ; //copy the upgradePoints minus one
-        *this << upgradedRobot ;
-
-        getLogger()->log(upgradedRobot->getName() + " has been upgraded into " + upgradedRobot->getType() + "\n") ;
-
-        robots.erase(std::remove(robots.begin(), robots.end(), robot), robots.end());  //remove the beforeUpgradeState from the vector
-        delete robot ;
-
-        upgradedRobot->setUpgradeThird(true)  ;
-        return ;
+    else if (type == "JumpSemiautoBot") {
+        int choice = rand() % 2;
+        if (choice == 0) upgradedRobot = new JumpSemiautoScoutBot("JumpSemiautoScoutBot", name, x, y, this);
+        else upgradedRobot = new JumpSemiautoTrackerBot("JumpSemiautoTrackerBot", name, x, y, this);
+        if (upgradedRobot) upgradedRobot->setUpgradeThird(true);
     }
-    else if(robot->getType() == "JumpTrueDamageBot") {
-        int choice = rand() % 2;                  //0 scout, 1 tracker
-
-        JumpTrueDamageBot* upgradedRobot ;
-        if (choice == 0) {
-            // Upgrade to HideBot
-            upgradedRobot = new JumpTrueDamageScoutBot("JumpTrueDamageScoutBot", robot->getName(), robot->getX(), robot->getY(), this);
-        }
-        else if (choice == 1) {
-            // Upgrade to JumpBot
-            upgradedRobot = new JumpTrueDamageTrackerBot("JumpTrueDamageTrackerBot", robot->getName(), robot->getX(), robot->getY(), this);
-        }
-
-        upgradedRobot->setRevivals(robot->getRevivals()) ;  //copy the remainingRevivals
-        upgradedRobot->setUpgradePoints(robot->getUpgradePoints() - 1) ; //copy the upgradePoints minus one
-        *this << upgradedRobot ;
-
-        getLogger()->log(upgradedRobot->getName() + " has been upgraded into " + upgradedRobot->getType() + "\n") ;
-
-        robots.erase(std::remove(robots.begin(), robots.end(), robot), robots.end());  //remove the beforeUpgradeState from the vector
-        delete robot ;
-
-        upgradedRobot->setUpgradeThird(true)  ;
-        return ;
+    else if (type == "JumpThirtyshotBot") {
+        int choice = rand() % 2;
+        if (choice == 0) upgradedRobot = new JumpThirtyshotScoutBot("JumpThirtyshotScoutBot", name, x, y, this);
+        else upgradedRobot = new JumpThirtyshotTrackerBot("JumpThirtyshotTrackerBot", name, x, y, this);
+        if (upgradedRobot) upgradedRobot->setUpgradeThird(true);
     }
-    else if(robot->getType() == "JumpLifestealBot") {
-        int choice = rand() % 2;                  //0 scout, 1 tracker
-
-        JumpLifestealBot* upgradedRobot ;
-        if (choice == 0) {
-            // Upgrade to HideBot
-            upgradedRobot = new JumpLifestealScoutBot("JumpLifestealScoutBot", robot->getName(), robot->getX(), robot->getY(), this);
-        }
-        else if (choice == 1) {
-            // Upgrade to JumpBot
-            upgradedRobot = new JumpLifestealTrackerBot("JumpLifestealTrackerBot", robot->getName(), robot->getX(), robot->getY(), this);
-        }
-
-        upgradedRobot->setRevivals(robot->getRevivals()) ;  //copy the remainingRevivals
-        upgradedRobot->setUpgradePoints(robot->getUpgradePoints() - 1) ; //copy the upgradePoints minus one
-        *this << upgradedRobot ;
-
-        getLogger()->log(upgradedRobot->getName() + " has been upgraded into " + upgradedRobot->getType() + "\n") ;
-
-        robots.erase(std::remove(robots.begin(), robots.end(), robot), robots.end());  //remove the beforeUpgradeState from the vector
-        delete robot ;
-
-        upgradedRobot->setUpgradeThird(true)  ;
-        return ;
+    else if (type == "JumpTrueDamageBot") {
+        int choice = rand() % 2;
+        if (choice == 0) upgradedRobot = new JumpTrueDamageScoutBot("JumpTrueDamageScoutBot", name, x, y, this);
+        else upgradedRobot = new JumpTrueDamageTrackerBot("JumpTrueDamageTrackerBot", name, x, y, this);
+        if (upgradedRobot) upgradedRobot->setUpgradeThird(true);
     }
-    else if(robot->getType() == "JuggernautLongshotBot") {
-        int choice = rand() % 2;                  //0 scout, 1 tracker
-
-        JuggernautLongshotBot* upgradedRobot ;
-        if (choice == 0) {
-            // Upgrade to HideBot
-            upgradedRobot = new JuggernautLongshotScoutBot("JuggernautLongshotScoutBot", robot->getName(), robot->getX(), robot->getY(), this);
-        }
-        else if (choice == 1) {
-            // Upgrade to JumpBot
-            upgradedRobot = new JuggernautLongshotTrackerBot("JuggernautLongshotTrackerBot", robot->getName(), robot->getX(), robot->getY(), this);
-        }
-
-        upgradedRobot->setRevivals(robot->getRevivals()) ;  //copy the remainingRevivals
-        upgradedRobot->setUpgradePoints(robot->getUpgradePoints() - 1) ; //copy the upgradePoints minus one
-        *this << upgradedRobot ;
-
-        getLogger()->log(upgradedRobot->getName() + " has been upgraded into " + upgradedRobot->getType() + "\n") ;
-
-        robots.erase(std::remove(robots.begin(), robots.end(), robot), robots.end());  //remove the beforeUpgradeState from the vector
-        delete robot ;
-
-        upgradedRobot->setUpgradeThird(true)  ;
-        return ;
+    else if (type == "JumpLifestealBot") {
+        int choice = rand() % 2;
+        if (choice == 0) upgradedRobot = new JumpLifestealScoutBot("JumpLifestealScoutBot", name, x, y, this);
+        else upgradedRobot = new JumpLifestealTrackerBot("JumpLifestealTrackerBot", name, x, y, this);
+        if (upgradedRobot) upgradedRobot->setUpgradeThird(true);
     }
-    else if(robot->getType() == "JuggernautSemiautoBot") {
-        int choice = rand() % 2;                  //0 scout, 1 tracker
-
-        JuggernautSemiautoBot* upgradedRobot ;
-        if (choice == 0) {
-            // Upgrade to HideBot
-            upgradedRobot = new JuggernautSemiautoScoutBot("JuggernautSemiautoScoutBot", robot->getName(), robot->getX(), robot->getY(), this);
-        }
-        else if (choice == 1) {
-            // Upgrade to JumpBot
-            upgradedRobot = new JuggernautSemiautoTrackerBot("JuggernautSemiautoTrackerBot", robot->getName(), robot->getX(), robot->getY(), this);
-        }
-
-        upgradedRobot->setRevivals(robot->getRevivals()) ;  //copy the remainingRevivals
-        upgradedRobot->setUpgradePoints(robot->getUpgradePoints() - 1) ; //copy the upgradePoints minus one
-        *this << upgradedRobot ;
-
-        getLogger()->log(upgradedRobot->getName() + " has been upgraded into " + upgradedRobot->getType() + "\n") ;
-
-        robots.erase(std::remove(robots.begin(), robots.end(), robot), robots.end());  //remove the beforeUpgradeState from the vector
-        delete robot ;
-
-        upgradedRobot->setUpgradeThird(true)  ;
-        return ;
+    else if (type == "JuggernautLongshotBot") {
+        int choice = rand() % 2;
+        if (choice == 0) upgradedRobot = new JuggernautLongshotScoutBot("JuggernautLongshotScoutBot", name, x, y, this);
+        else upgradedRobot = new JuggernautLongshotTrackerBot("JuggernautLongshotTrackerBot", name, x, y, this);
+        if (upgradedRobot) upgradedRobot->setUpgradeThird(true);
     }
-    else if(robot->getType() == "JuggernautThirtyshotBot") {
-        int choice = rand() % 2;                  //0 scout, 1 tracker
-
-        JuggernautThirtyshotBot* upgradedRobot ;
-        if (choice == 0) {
-            // Upgrade to HideBot
-            upgradedRobot = new JuggernautThirtyshotScoutBot("JuggernautThirtyshotScoutBot", robot->getName(), robot->getX(), robot->getY(), this);
-        }
-        else if (choice == 1) {
-            // Upgrade to JumpBot
-            upgradedRobot = new JuggernautThirtyshotTrackerBot("JuggernautThirtyshotTrackerBot", robot->getName(), robot->getX(), robot->getY(), this);
-        }
-
-        upgradedRobot->setRevivals(robot->getRevivals()) ;  //copy the remainingRevivals
-        upgradedRobot->setUpgradePoints(robot->getUpgradePoints() - 1) ; //copy the upgradePoints minus one
-        *this << upgradedRobot ;
-
-        getLogger()->log(upgradedRobot->getName() + " has been upgraded into " + upgradedRobot->getType() + "\n") ;
-
-        robots.erase(std::remove(robots.begin(), robots.end(), robot), robots.end());  //remove the beforeUpgradeState from the vector
-        delete robot ;
-
-        upgradedRobot->setUpgradeThird(true)  ;
-        return ;
+    else if (type == "JuggernautSemiautoBot") {
+        int choice = rand() % 2;
+        if (choice == 0) upgradedRobot = new JuggernautSemiautoScoutBot("JuggernautSemiautoScoutBot", name, x, y, this);
+        else upgradedRobot = new JuggernautSemiautoTrackerBot("JuggernautSemiautoTrackerBot", name, x, y, this);
+        if (upgradedRobot) upgradedRobot->setUpgradeThird(true);
     }
-    else if(robot->getType() == "JuggernautTrueDamageBot") {
-        int choice = rand() % 2;                  //0 scout, 1 tracker
-
-        JuggernautTrueDamageBot* upgradedRobot ;
-        if (choice == 0) {
-            // Upgrade to HideBot
-            upgradedRobot = new JuggernautTrueDamageScoutBot("JuggernautTrueDamageScoutBot", robot->getName(), robot->getX(), robot->getY(), this);
-        }
-        else if (choice == 1) {
-            // Upgrade to JumpBot
-            upgradedRobot = new JuggernautTrueDamageTrackerBot("JuggernautTrueDamageTrackerBot", robot->getName(), robot->getX(), robot->getY(), this);
-        }
-
-        upgradedRobot->setRevivals(robot->getRevivals()) ;  //copy the remainingRevivals
-        upgradedRobot->setUpgradePoints(robot->getUpgradePoints() - 1) ; //copy the upgradePoints minus one
-        *this << upgradedRobot ;
-
-        getLogger()->log(upgradedRobot->getName() + " has been upgraded into " + upgradedRobot->getType() + "\n") ;
-
-        robots.erase(std::remove(robots.begin(), robots.end(), robot), robots.end());  //remove the beforeUpgradeState from the vector
-        delete robot ;
-
-        upgradedRobot->setUpgradeThird(true)  ;
-        return ;
+    else if (type == "JuggernautThirtyshotBot") {
+        int choice = rand() % 2;
+        if (choice == 0) upgradedRobot = new JuggernautThirtyshotScoutBot("JuggernautThirtyshotScoutBot", name, x, y, this);
+        else upgradedRobot = new JuggernautThirtyshotTrackerBot("JuggernautThirtyshotTrackerBot", name, x, y, this);
+        if (upgradedRobot) upgradedRobot->setUpgradeThird(true);
     }
-    else if(robot->getType() == "JuggernautLifestealBot") {
-        int choice = rand() % 2;                  //0 scout, 1 tracker
-
-        JuggernautLifestealBot* upgradedRobot ;
-        if (choice == 0) {
-            // Upgrade to HideBot
-            upgradedRobot = new JuggernautLifestealScoutBot("JuggernautLifestealScoutBot", robot->getName(), robot->getX(), robot->getY(), this);
-        }
-        else if (choice == 1) {
-            // Upgrade to JumpBot
-            upgradedRobot = new JuggernautLifestealTrackerBot("JuggernautLifestealTrackerBot", robot->getName(), robot->getX(), robot->getY(), this);
-        }
-
-        upgradedRobot->setRevivals(robot->getRevivals()) ;  //copy the remainingRevivals
-        upgradedRobot->setUpgradePoints(robot->getUpgradePoints() - 1) ; //copy the upgradePoints minus one
-        *this << upgradedRobot ;
-
-        getLogger()->log(upgradedRobot->getName() + " has been upgraded into " + upgradedRobot->getType() + "\n") ;
-
-        robots.erase(std::remove(robots.begin(), robots.end(), robot), robots.end());  //remove the beforeUpgradeState from the vector
-        delete robot ;
-
-        upgradedRobot->setUpgradeThird(true)  ;
-        return ;
+    else if (type == "JuggernautTrueDamageBot") {
+        int choice = rand() % 2;
+        if (choice == 0) upgradedRobot = new JuggernautTrueDamageScoutBot("JuggernautTrueDamageScoutBot", name, x, y, this);
+        else upgradedRobot = new JuggernautTrueDamageTrackerBot("JuggernautTrueDamageTrackerBot", name, x, y, this);
+        if (upgradedRobot) upgradedRobot->setUpgradeThird(true);
     }
+    else if (type == "JuggernautLifestealBot") {
+        int choice = rand() % 2;
+        if (choice == 0) upgradedRobot = new JuggernautLifestealScoutBot("JuggernautLifestealScoutBot", name, x, y, this);
+        else upgradedRobot = new JuggernautLifestealTrackerBot("JuggernautLifestealTrackerBot", name, x, y, this);
+        if (upgradedRobot) upgradedRobot->setUpgradeThird(true);
+    }
+
+    return upgradedRobot;
 }
 
 Battlefield& Battlefield::operator<<(Robot* robot) {
