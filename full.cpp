@@ -2194,20 +2194,10 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 */
 
 int main() {
-    for(int i = 0 ; i < 100 ; i++) {
-        try {
-            srand(static_cast<unsigned>(time(nullptr)));
-            Battlefield battlefield(MAX_ROWS, MAX_COLS);
-            battlefield.loadFromFile("input.txt");
-            battlefield.runSimulation();
-            std::cout << "\niterattion : " << i << "\n" ;
-        } catch (const std::bad_alloc& e) {
-            std::cerr << "\nMemory allocation failed at iteration " << i << ": " << e.what() << "\n";
-            break;
-        } catch (const std::exception& e) {
-            std::cerr << "\nUnhandled exception at iteration " << i << ": " << e.what() << "\n";
-        }
 
-    }
+    srand(static_cast<unsigned>(time(nullptr)));
+    Battlefield battlefield(MAX_ROWS, MAX_COLS);
+    battlefield.loadFromFile("input.txt");
+    battlefield.runSimulation();
     return 0;
 }
