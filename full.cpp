@@ -263,7 +263,7 @@ public:
 class TrackerBot : virtual public GenericRobot {
 private:
     int remainingTracker = 3 ;
-    std::vector<Robot*> trackedRobot ;
+    std::vector<std::string> trackedRobotName ;
 public:
     TrackerBot(const std::string& type, const std::string& name, int x, int y, Battlefield* bf)
         : Robot(type, name, x, y, bf), GenericRobot(type, name, x, y, bf) {
@@ -1384,7 +1384,7 @@ void TrackerBot::look(int dx, int dy) {
         }
     }
 
-    // Scan all robots on the battlefield
+    // perform normal look and put tracker if got tracker remainings.
     for (Robot* other : battlefield->getRobots()) {
         if (!other || other == this || !other->isAlive())
             continue;
@@ -1398,8 +1398,8 @@ void TrackerBot::look(int dx, int dy) {
 
                 // Track if not already tracked
                 if (remainingTracker > 0 &&
-                    std::find(trackedRobot.begin(), trackedRobot.end(), other) == trackedRobot.end()) {
-                    trackedRobot.push_back(other);
+                    std::find(trackedRobotName.begin(), trackedRobotName.end(), other->getName()) == trackedRobotName.end()) {
+                    trackedRobotName.push_back(other->getName());
                     remainingTracker--;
                     battlefield->getLogger()->log(getName() + " put a tracker on " +
                         other->getName() + ". Remaining tracker left: " +
@@ -1410,19 +1410,17 @@ void TrackerBot::look(int dx, int dy) {
         }
     }
 
-    // Remove nullptrs
-    trackedRobot.erase(
-        std::remove(trackedRobot.begin(), trackedRobot.end(), nullptr),
-        trackedRobot.end()
-    );
+
 
     // Log tracked robots
-    for (Robot* robot : trackedRobot) {
-        if (robot && robot->isAlive()) {
-            battlefield->getLogger()->log(getName() + " sees "
-                                          + robot->getName() + " at ("
-                                          + std::to_string(robot->getX()) + ","
-                                          + std::to_string(robot->getY()) + ") from the tracker.\n");
+    for(Robot* robot : battlefield->getRobots()) {
+        for (std::string& trackedName : trackedRobotName) {
+            if (robot && robot->isAlive() && robot->getName() == trackedName) {
+                battlefield->getLogger()->log(getName() + " sees "
+                                              + robot->getName() + " at ("
+                                              + std::to_string(robot->getX()) + ","
+                                              + std::to_string(robot->getY()) + ") from the tracker.\n");
+            }
         }
     }
 }
@@ -1507,17 +1505,7 @@ void Battlefield::runSimulation() {
 
         reviveOne() ;                         //try to revive one robot from the queue
 
-        for (auto it = robots.begin(); it != robots.end(); ) {   //erase nullptr from the vectors if there exist
-            if (*it == nullptr) {
-                it = robots.erase(it);
-            } else {
-                ++it;
-            }
-        }
-
         for(Robot* robot : robots) {         //each robot take turn
-
-
             if (robot->isAlive()) {
                 robot->takeTurn();
             }
@@ -1529,7 +1517,6 @@ void Battlefield::runSimulation() {
                     getLogger()->log(robot->getName() + " is ded. Sent to graveyard.\n") ;
                     enterGraveyard(robot) ;
                 }
-
             }
         }
 
@@ -2194,20 +2181,11 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 */
 
 int main() {
-    for(int i = 0 ; i < 100 ; i++) {
-        try {
-            srand(static_cast<unsigned>(time(nullptr)));
-            Battlefield battlefield(MAX_ROWS, MAX_COLS);
-            battlefield.loadFromFile("input.txt");
-            battlefield.runSimulation();
-            std::cout << "\niterattion : " << i << "\n" ;
-        } catch (const std::bad_alloc& e) {
-            std::cerr << "\nMemory allocation failed at iteration " << i << ": " << e.what() << "\n";
-            break;
-        } catch (const std::exception& e) {
-            std::cerr << "\nUnhandled exception at iteration " << i << ": " << e.what() << "\n";
-        }
 
-    }
+    srand(static_cast<unsigned>(time(nullptr)));
+    Battlefield battlefield(MAX_ROWS, MAX_COLS);
+    battlefield.loadFromFile("input.txt");
+    battlefield.runSimulation();
+
     return 0;
 }
